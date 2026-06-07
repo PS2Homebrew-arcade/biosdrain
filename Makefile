@@ -1,8 +1,6 @@
-EE_BIN = biosdrain.elf
-EE_OBJS = biosdrain.o OSDInit.o sysman_rpc.o ui/menu.o dump.o modelname.o
-EE_OBJS += ui/fontqueue.o ui/tex/font/font_tex.o ui/tex/font/font_pallete_tex.o ui/fontengine.o
-EE_OBJS += ui/graphic.o ui/graphic_vu.o ui/tex/bongo_tex_1.o ui/tex/bongo_tex_2.o ui/tex/biosdrain_tex.o
-IRX_OBJS = irx/usbmass_bd_irx.o irx/usbd_irx.o irx/bdm_irx.o irx/bdmfs_fatfs_irx.o irx/sysman_irx.o
+EE_BIN = bin/biosdrain_arcade.elf
+EE_OBJS = biosdrain.o OSDInit.o sysman_rpc.o dump.o modelname.o
+IRX_OBJS = irx/usbmass_bd_irx.o irx/usbd_irx.o irx/bdm_irx.o irx/bdmfs_fatfs_irx.o irx/sysman_irx.o irx/mmceman.o
 # Bin2c objects that will be linked in
 EE_OBJS += $(IRX_OBJS)
 EE_LIBS = -lkernel -lpatches -ldebug -lgraph -ldma -ldraw
@@ -21,6 +19,9 @@ all: sysman_irx $(EE_BIN)
 # IRX files to be built and or bin2c'd
 sysman_irx:
 	$(MAKE) -C sysman
+
+irx/mmceman.c: irx/mmceman.irx
+	bin2c $< $@ mmceman_irx
 
 irx/sysman_irx.c: sysman/sysman.irx
 	bin2c $< irx/sysman_irx.c sysman_irx

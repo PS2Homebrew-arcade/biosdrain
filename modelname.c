@@ -4,6 +4,7 @@
 */
 
 #include <stdio.h>
+#include <debug.h>
 #include <string.h>
 #include <stdlib.h>
 #include <kernel.h>
@@ -61,7 +62,7 @@ int modelname_read(char *name)
 			Oddly, the console models that come with v1.01, like the SCPH-15000 and DTL-H10000,
 			will always be identified as "SCPH-10000" by their ROM OSDSYS programs.
 	*/
-	if (ConsoleROMVER[0] == '0' && ConsoleROMVER[1] == '1' && ConsoleROMVER[2] == '0')
+	if (ConsoleROMVER[0] == '0' && ConsoleROMVER[1] == '1' && ConsoleROMVER[2] == '0' && ConsoleROMVER[5] != 'Z')
 	{
 		if (ConsoleROMVER[3] == '0') // For ROM v1.00 (Early SCPH-10000 units).
 			strcpy(name, "SCPH-10000");
@@ -81,13 +82,14 @@ int modelname_read(char *name)
 	}
 	else
 	{
-		if ((result = sceCdAltRM(name, &stat)) == 1)
-		{
+		if ((result = sceCdAltRM(name, &stat)) == 1) {
 			if (stat & 0x80)
 				return -2;
 			if ((stat & 0x40) || name[0] == '\0')
 				strcpy(name, "Unknown");
-
+			if (ConsoleROMVER[5] == 'Z' && (name[0]&0xFF) == 0xFF && (name[1]&0xFF) == 0xFF) {
+				strcpy(name, "SYSTEM256");// arcade machine with modename memset to 0xFF? this is a system256
+			}
 			return 0; // Original returned -1
 		}
 		else
