@@ -126,18 +126,26 @@ void dump_exec()
 	{
 		if (dump_jobs[i].enabled)
 		{
-			scr_printf("Dumping %s...", dump_jobs[i].dump_name);
+			scr_printf("  Dumping %s... \r", dump_jobs[i].dump_name);
 			u32 ret = dump_jobs[i].dump_func();
 			if (!ret)
 			{
 				FlushCache(0);
-				scr_printf("Writing to file...");
+				scr_printf("  %-6s Writing to file...\r", dump_jobs[i].dump_name);
 				dump_file(dump_jobs[i]);
-				scr_printf("Finished\n");
+				scr_printf("  %-6s [", dump_jobs[i].dump_name);
+				scr_setfontcolor(0x00FF00);
+				scr_printf("OK");
+				scr_setfontcolor(0xFFFFFF);
+				scr_printf("]                   \n");
 			}
 			else
 			{
-				scr_printf("Dump failed, result %d\n", ret);
+				scr_printf("  %-6s [", dump_jobs[i].dump_name);
+				scr_setfontcolor(0x0000FF);
+				scr_printf("FAIL");
+				scr_setfontcolor(0xFFFFFF);
+				scr_printf("] (ret:%02d)          \n", ret);
 			}
 		}
 	}

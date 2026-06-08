@@ -47,40 +47,45 @@ t_SysmanHardwareInfo g_hardwareInfo;
 void LoadSystemInformation()
 {
 	SysmanGetHardwareInfo(&g_hardwareInfo);
-	scr_setfontcolor(0x00FFFF);
 	if (g_hardwareInfo.ROMs[0].IsExists)
-		scr_printf("- ROM0 ADDR and SIZE: %08X %08X\n", g_hardwareInfo.ROMs[0].StartAddress, g_hardwareInfo.ROMs[0].size);
-	else
-		scr_printf("- WTF: ROM0 not detected\n");
-	scr_setfontcolor(0xFFFFFF);
+		scr_printf(" - ROM0 ADDR and SIZE: %08X %08X\n", g_hardwareInfo.ROMs[0].StartAddress, g_hardwareInfo.ROMs[0].size);
+	else {
+		scr_setfontcolor(0x00FFFF);
+		scr_printf(" - WTF: ROM0 not detected\n");
+		scr_setfontcolor(0xFFFFFF);
+	}
 
 	if (g_hardwareInfo.DVD_ROM.IsExists)
-		scr_printf("- DVD ADDR and SIZE: %08X %08X\n", g_hardwareInfo.DVD_ROM.StartAddress, g_hardwareInfo.DVD_ROM.size);
+		scr_printf(" - DVD ADDR and SIZE: %08X %08X\n", g_hardwareInfo.DVD_ROM.StartAddress, g_hardwareInfo.DVD_ROM.size);
 
 	if (g_hardwareInfo.ROMs[1].IsExists)
 	{
-		scr_setfontcolor(0x00FFFF);
-		scr_printf("  UNICORN!!! DEVELOPER FLASH DETECTED!!!\n");
-		scr_printf("  PLEASE CONTACT El_isra at github.com/PS2Homebrew-arcade/biosdrain/issues/new");
-		scr_setfontcolor(0xFFFFFF);
+		extern char ConsoleROMVER[];
+		if (ConsoleROMVER[5] == 'Z') {
+			scr_setfontcolor(0x00FFFF);
+			scr_printf("  UNICORN!!! DEVELOPER FLASH DETECTED!!!\n");
+			scr_printf("  PLEASE CONTACT El_isra at github.com/PS2Homebrew-arcade/biosdrain/issues/new");
+			scr_setfontcolor(0xFFFFFF);
+		}
 		scr_printf(" - ROM1 ADDR and SIZE: %08X %08X\n", g_hardwareInfo.ROMs[1].StartAddress, g_hardwareInfo.ROMs[1].size);
 	}
-	if (g_hardwareInfo.ROMs[2].IsExists)
+	if (g_hardwareInfo.ROMs[2].IsExists) {
+		if (ConsoleROMVER[5] == 'Z')
+			scr_setfontcolor(0x00FFFF);
 		scr_printf(" - ROM2 ADDR and SIZE: %08X %08X\n", g_hardwareInfo.ROMs[2].StartAddress, g_hardwareInfo.ROMs[2].size);
+		scr_setfontcolor(0xFFFFFF);
+	}
 
-	scr_printf("- BoardInf: %02X\n",g_hardwareInfo.BoardInf);
+	scr_printf(" - BoardInf: %02X\n",g_hardwareInfo.BoardInf);
 	
-	scr_printf("- ILINK: ports:%d maxspeed:%02X compliance:%02X Vendor:%08X Product:%08X\n", 
-		g_hardwareInfo.iLink.NumPorts,
-		g_hardwareInfo.iLink.MaxSpeed,
-		g_hardwareInfo.iLink.ComplianceLevel,
-		g_hardwareInfo.iLink.VendorID,
-		g_hardwareInfo.iLink.ProductID);
-	scr_printf("- SPU: Revision %04X\n", g_hardwareInfo.spu2.revision);
-	scr_printf("- MPU: BoardID  %04X\n", g_hardwareInfo.MPUBoardID);
-	scr_printf("- IOP: Rev:%04X, RamSize:%08X\n", g_hardwareInfo.iop.revision, g_hardwareInfo.iop.RAMSize);
+	scr_printf(" - ILINK: ports:%d maxspeed:%02X compliance:%02X Vendor:%08X Product:%08X\n", 
+		g_hardwareInfo.iLink.NumPorts, g_hardwareInfo.iLink.MaxSpeed,
+		g_hardwareInfo.iLink.ComplianceLevel, g_hardwareInfo.iLink.VendorID, g_hardwareInfo.iLink.ProductID);
+	scr_printf(" - SPU: Revision %04X\n", g_hardwareInfo.spu2.revision);
+	scr_printf(" - MPU: BoardID  %04X\n", g_hardwareInfo.MPUBoardID);
+	scr_printf(" - IOP: Rev:%04X, RamSize:%08X\n", g_hardwareInfo.iop.revision, g_hardwareInfo.iop.RAMSize);
 	u16 EEREV = GetCop0(15);
-	scr_printf("- EE : Rev:%04X, Impl:%08X\n", EEREV >> 8, EEREV & 0xFF);
+	scr_printf(" - EE : Rev:%04X, Impl:%08X, RamSize:%08X\n", EEREV >> 8, EEREV & 0xFF, GetMemorySize());
 
 }
 
@@ -187,14 +192,14 @@ int main(void)
 
 	init_scr();
 
-	scr_printf("\n\n\n biosdrain for SYSTEM2x6 - Modified By El_isra - revision %s\n", GIT_VERSION);
+	scr_printf("\n\n\n  biosdrain for SYSTEM2x6 - Modified By El_isra - revision %s\n", GIT_VERSION);
 	if (determine_device())
 		goto exit_main;
 
 	load_irx_sysman();
 
 	char* targets[4] = {"host:", "usb:", "mmce0:", "mmce1:"}; 
-	scr_printf("Dumping to %s\n", targets[final_target]);
+	scr_printf("  Dumping to %s\n", targets[final_target]);
 
 	LoadSystemInformation();
 
@@ -203,7 +208,7 @@ int main(void)
 	dump_exec();
 	dump_cleanup();
 exit_main:
-	scr_printf("Finished everything. You're free to turn off the system.\n");
+	scr_printf("  Finished everything. You're free to turn off the system.\n");
 	scr_printf("\n");
 	SleepThread();
 }
