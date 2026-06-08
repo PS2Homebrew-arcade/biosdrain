@@ -35,8 +35,6 @@ jobs:
       - name: Compile project
         run: |
           make clean all
-          mkdir binaries
-          cp biosdrain.elf binaries/biosdrain.elf
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -45,6 +43,6 @@ jobs:
           prerelease: true
           generate_release_notes: true
           files: |
-            binaries/biosdrain.elf
+            bin/biosdrain.elf
           tag_name: ${{ steps.tag_version.outputs.new_tag }}
 

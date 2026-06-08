@@ -43,6 +43,7 @@ void sysman_prerequesites()
 	// SifLoadModule("rom0:ADDROM2", 0, NULL);
 }
 
+extern char ConsoleROMVER[];
 t_SysmanHardwareInfo g_hardwareInfo;
 void LoadSystemInformation()
 {
@@ -60,7 +61,6 @@ void LoadSystemInformation()
 
 	if (g_hardwareInfo.ROMs[1].IsExists)
 	{
-		extern char ConsoleROMVER[];
 		if (ConsoleROMVER[5] == 'Z') {
 			scr_setfontcolor(0x00FFFF);
 			scr_printf("  UNICORN!!! DEVELOPER FLASH DETECTED!!!\n");
