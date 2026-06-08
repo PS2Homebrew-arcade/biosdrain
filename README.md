@@ -4,54 +4,18 @@
 
 Download the latest version of biosdrain under the GitHub releases page.
 
-### - **For PS2LINK / PS2CLIENT users**
+run it from an usb either fat32 or exfat. you may also run it from the sdcard of your psxmemcard gen1/gen2 if you have it
 
-Execute biosdrain on the EE. For example: `ps2client execee host:biosdrain.elf`
+## Dumped data
+By default, the program will dump
+- bios: the .rom0 file you will see on the dump, you want this for PCSX2x6
+- NVRAM: might be relevant, but we aren't sure
+- mechacon version: the .mec file, useless bc PCSX2x6 already reports it's emulation of the mechacon with the appropiate version (only one arcade mechacon exists)
 
-biosdrain should automatically detect a host filesystem, and dump the files directly to your computer.
+## important warnings
 
-### - **For USB users (using uLaunchELF)**
-Put the biosdrain.elf file onto a FAT32 (or exFAT!) formatted USB drive.
-
-In uLaunchELF, navigate to `mass:` and execute the biosdrain.elf file you just transferred.
-
-biosdrain should automatically detect a USB drive, and dump the files to the root of the USB drive.
-
-**In the case that biosdrain does not detect a USB drive, try creating a smaller 1GB partition and
-leaving the rest unformatted.**
-
-### **Using the BIOS with PCSX2**
-Simply copy the files (if you've used a USB drive) back to your computer, and keep them somewhere safe so you don't have to do this process again.
-
-<br/>
-
-## **I politely ask that you do not share your BIOS files!**
-
-<br/>
-
-If the path to your bios was `D:\ps2bios\dump` you'd see one of the below.
-
-**WX**
-
-![image](https://user-images.githubusercontent.com/29295048/180281013-7e142c3a-2762-4987-885f-27d622029d64.png)
-
-**QT**
-
-![image](https://user-images.githubusercontent.com/29295048/180281541-a402877c-c8b7-4eea-9e36-710d3f48b0e2.png)
-
-
-## **Uninteresting info**
-
-### Currently detects and dumps
- - ROM0
- - ROM1 *size fixed at 4096kb
- - ROM2
- - NVM
- - MEC
+if for whatever reason you see a yellow text that begins with the word "UNICORN" you should come back here and report what you saw. it will help with the preservation of this platform
 
 ### Notes
 
 This software has been based off of the work from [PS2Ident](https://github.com/ps2homebrew/PS2Ident) licensed under AFL license-3.0 . The Sysman and Romdrv module source have been taken from there as well.
-
-Check out https://fobes.dev for some interesting PS2 programming blogs.
-You can support me on KoFi [here](Ko-fi.com/f0bes).

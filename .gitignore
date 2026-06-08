@@ -1,5 +1,6 @@
 *.o
 *.irx
+!irx/*.irx
 *.elf
 *.bin
 *.rom0

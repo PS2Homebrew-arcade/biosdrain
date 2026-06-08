@@ -4,6 +4,7 @@
 
 #include <kernel.h>
 #include <libcdvd.h>
+#include <debug.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -15,27 +16,29 @@ static u32 dump_rom0_func();
 static u32 dump_rom1_func();
 static u32 dump_rom2_func();
 static u32 dump_nvm_func();
+// static u32 dump_sram_func();
 static u32 dump_mec_func();
 
 static u8* dump_shared_buffer;
 
 extern t_SysmanHardwareInfo g_hardwareInfo;
 
-static t_dump dump_jobs[6];
+static t_dump dump_jobs[7];
 
 static char dump_filename[MODEL_NAME_MAX_LEN];
 
-static u32 dump_file_usb = 0;
+static u32 dump_target = 0;
 extern int errno;
 static u32 dump_file(t_dump job)
 {
 	char path[256];
-	sprintf(path, "%s%s.%s", dump_file_usb ? "mass:" : "host:", dump_filename, job.dump_fext);
+	char* targets[4] = {"host:", "usb:", "mmce0:", "mmce1:"}; 
+	sprintf(path, "%s%s.%s", targets[dump_target], dump_filename, job.dump_fext);
 
 	FILE *f = fopen(path, "wb");
 	if (!f)
 	{
-		menu_status("Failed to open %d file %s\n", f, path);
+		scr_printf("Failed to open file %s error %d\n", path, errno);
 		return 1;
 	}
 
@@ -45,7 +48,7 @@ static u32 dump_file(t_dump job)
 		u32 write_size = fwrite(dump_shared_buffer, 1, written_size, f);
 		if (write_size == 0)
 		{
-			menu_status("Failed to write to file %s\n", path);
+			scr_printf("Failed to write to file %s\n", path);
 			fclose(f);
 			return 2;
 		}
@@ -62,7 +65,7 @@ static u32 dump_file(t_dump job)
 void dump_init(u32 use_usb)
 {
 	dump_shared_buffer = (u8*) aligned_alloc(64, 0x400000);
-	dump_file_usb = use_usb;
+	dump_target = use_usb;
 
 	// ROM0
 	{
@@ -94,7 +97,7 @@ void dump_init(u32 use_usb)
 		dump_jobs[4].dump_fext = "nvm";
 		dump_jobs[4].dump_func = dump_nvm_func;
 		dump_jobs[4].dump_size = 1024;
-		dump_jobs[4].enabled = g_hardwareInfo.DVD_ROM.IsExists;
+		dump_jobs[4].enabled = true;
 	}
 	// MEC
 	{
@@ -102,11 +105,19 @@ void dump_init(u32 use_usb)
 		dump_jobs[5].dump_fext = "mec";
 		dump_jobs[5].dump_func = dump_mec_func;
 		dump_jobs[5].dump_size = 4;
-		dump_jobs[5].enabled = g_hardwareInfo.DVD_ROM.IsExists;
+		dump_jobs[5].enabled = true;
 	}
+	// SRAM
+	// {
+		// dump_jobs[5].dump_name = "SRAM";
+		// dump_jobs[5].dump_fext = "sram";
+		// dump_jobs[5].dump_func = dump_sram_func;
+		// dump_jobs[5].dump_size = 0x8000;
+		// dump_jobs[5].enabled = true;
+	// }
 
 	if(modelname_read(dump_filename) != 0)
-		menu_status("Warning: Unable to get the model name\nFile name will be set to 'Unknown'");
+		scr_printf("Warning: Unable to get the model name\nFile name will be set to 'Unknown'");
 }
 
 void dump_exec()
@@ -115,18 +126,26 @@ void dump_exec()
 	{
 		if (dump_jobs[i].enabled)
 		{
-			menu_status("Dumping %s...", dump_jobs[i].dump_name);
+			scr_printf("  Dumping %s... \r", dump_jobs[i].dump_name);
 			u32 ret = dump_jobs[i].dump_func();
 			if (!ret)
 			{
 				FlushCache(0);
-				menu_status("Writing to file...");
+				scr_printf("  %-6s Writing to file...\r", dump_jobs[i].dump_name);
 				dump_file(dump_jobs[i]);
-				menu_status("Finished\n");
+				scr_printf("  %-6s [", dump_jobs[i].dump_name);
+				scr_setfontcolor(0x00FF00);
+				scr_printf("OK");
+				scr_setfontcolor(0xFFFFFF);
+				scr_printf("]                   \n");
 			}
 			else
 			{
-				menu_status("Dump failed, result %d\n", ret);
+				scr_printf("  %-6s [", dump_jobs[i].dump_name);
+				scr_setfontcolor(0x0000FF);
+				scr_printf("FAIL");
+				scr_setfontcolor(0xFFFFFF);
+				scr_printf("] (ret:%02d)          \n", ret);
 			}
 		}
 	}
@@ -199,3 +218,13 @@ static u32 dump_mec_func()
 	u32 _unused;
 	return !sceCdMV(dump_shared_buffer, &_unused);
 }
+
+#define ACSRAM_ADDR_BASE 0xB2500000
+// static u32 dump_sram_func() {
+// 	vu16* P = (vu16*)ACSRAM_ADDR_BASE;
+// 	for (u32 i = 0; i < 0x8000; i++)
+// 	{
+// 		dump_shared_buffer[i] = P[i]&0xFF; // mask it, this is u16 MMIO for an u8 buffer
+// 	}
+// 	return 0;
+// }
