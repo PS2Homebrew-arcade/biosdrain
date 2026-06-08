@@ -26,6 +26,8 @@
 extern unsigned int size_##_irx; \
 extern unsigned char _irx[]
 
+BIN2C(fileXio_irx);
+BIN2C(iomanX_irx);
 BIN2C(bdm_irx);
 BIN2C(bdmfs_fatfs_irx);
 BIN2C(usbmass_bd_irx);
@@ -206,8 +208,18 @@ exit_main:
 	SleepThread();
 }
 
+
+#define NEWLIB_PORT_AWARE
+#include <fileXio_rpc.h>
 void _ps2sdk_memory_init() {
 	reset_iop();
+	
+	int mod_id, mod_res;
+	mod_id = SifExecModuleBuffer(&iomanX_irx, size_iomanX_irx, 0, NULL, &mod_res);
+	mod_id = SifExecModuleBuffer(&fileXio_irx, size_fileXio_irx, 0, NULL, &mod_res);
+	if (mod_id > 0 && !(mod_res&1)) {
+		fileXioInit();
+	}
 	SifLoadModule("rom0:CDVDFSV", 0, NULL); // not included on stock IOPBTCONF
 	SifLoadModule("rom0:SIO2MAN", 0, NULL);
 	SifLoadModule("rom0:MCMAN", 0, NULL);

@@ -1,9 +1,9 @@
 EE_BIN = bin/biosdrain_arcade.elf
 EE_OBJS = biosdrain.o OSDInit.o sysman_rpc.o dump.o modelname.o
-IRX_OBJS = irx/usbmass_bd_irx.o irx/usbd_irx.o irx/bdm_irx.o irx/bdmfs_fatfs_irx.o irx/sysman_irx.o irx/mmceman.o
+IRX_OBJS = $(addprefix irx/, $(addsuffix _irx.o, usbmass_bd usbd bdm bdmfs_fatfs sysman mmceman fileXio iomanX))
 # Bin2c objects that will be linked in
 EE_OBJS += $(IRX_OBJS)
-EE_LIBS = -lkernel -lpatches -ldebug -lgraph -ldma -ldraw
+EE_LIBS = -lkernel -lpatches -ldebug -lgraph -ldma -ldraw -lfileXio
 
 EE_DVP = dvp-as
 
@@ -20,41 +20,15 @@ all: sysman_irx $(EE_BIN)
 sysman_irx:
 	$(MAKE) -C sysman
 
-irx/mmceman.c: irx/mmceman.irx
-	bin2c $< $@ mmceman_irx
-
 irx/sysman_irx.c: sysman/sysman.irx
 	bin2c $< irx/sysman_irx.c sysman_irx
 
-irx/usbd_irx.c: $(PS2SDK)/iop/irx/usbd.irx
-	bin2c $< irx/usbd_irx.c usbd_irx
+vpath %.irx irx/
+vpath %.irx $(PS2SDK)/iop/irx
 
-irx/usbmass_bd_irx.c: $(PS2SDK)/iop/irx/usbmass_bd.irx
-	bin2c $< irx/usbmass_bd_irx.c usbmass_bd_irx
-
-irx/bdm_irx.c: $(PS2SDK)/iop/irx/bdm.irx
-	bin2c $< irx/bdm_irx.c bdm_irx
-
-irx/bdmfs_fatfs_irx.c: $(PS2SDK)/iop/irx/bdmfs_fatfs.irx
-	bin2c $< irx/bdmfs_fatfs_irx.c bdmfs_fatfs_irx
-
-ui/tex/biosdrain_tex.c: ui/tex/biosdrain_tex.raw
-	bin2c $< ui/tex/biosdrain_tex.c biosdrain_tex
-
-ui/tex/bongo_tex_1.c: ui/tex/bongo_tex_1.raw
-	bin2c $< ui/tex/bongo_tex_1.c bongo_tex_1
-
-ui/tex/bongo_tex_2.c: ui/tex/bongo_tex_2.raw
-	bin2c $< ui/tex/bongo_tex_2.c bongo_tex_2
-
-ui/tex/font/font_tex.c: ui/tex/font/font_tex.raw
-	bin2c $< ui/tex/font/font_tex.c font_tex
-
-ui/tex/font/font_pallete_tex.c: ui/tex/font/font_pallete_tex.raw
-	bin2c $< ui/tex/font/font_pallete_tex.c font_pallete_tex
-
-%.o: %.vsm
-	$(EE_DVP) $< -o $@
+IRXTAG = $(notdir $(addsuffix _irx, $(basename $<)))
+irx/%_irx.c: %.irx
+	bin2c $< $@ $(IRXTAG)
 
 clean:
 	$(MAKE) -C sysman clean
