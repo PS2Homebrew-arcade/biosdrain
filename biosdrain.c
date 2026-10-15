@@ -22,6 +22,9 @@
 
 #include "OSDInit.h"
 
+#define NEWLIB_PORT_AWARE
+#include <fileXio_rpc.h>
+
 #define BIN2C(_irx) \
 extern unsigned int size_##_irx; \
 extern unsigned char _irx[]
@@ -156,18 +159,17 @@ int determine_device() {
 	scr_printf("Built to force USB and skip HOST.\n");
 #endif
 	{
-
-		use_mmce0   = !wait_dev_ready("mmce0:/");
-		use_mmce1   = !wait_dev_ready("mmce1:/");
+		use_mmce0   = fileXioDevctl("mmce0:", 0x1, NULL, 0, NULL, 0); // MMCE_CMD_PING == 0x1
+		use_mmce1   = fileXioDevctl("mmce1:", 0x1, NULL, 0, NULL, 0);
 		use_usb_dir = !wait_dev_ready("usb:/");
 		if (!(use_usb_dir || use_mmce1 || use_mmce0)) {
-			use_mmce0   = !wait_dev_ready("mmce0:/");
-			use_mmce1   = !wait_dev_ready("mmce1:/");
+			use_mmce0   = fileXioDevctl("mmce0:", 0x1, NULL, 0, NULL, 0);
+			use_mmce1   = fileXioDevctl("mmce1:", 0x1, NULL, 0, NULL, 0);
 			use_usb_dir = !wait_dev_ready("usb:/");
 		}
-		if (use_usb_dir) final_target = USB;
-		if (use_mmce1)   final_target = MMCE1;
-		if (use_mmce0)   final_target = MMCE0;
+		if (use_usb_dir) 		final_target = USB;
+		if (use_mmce1 != -1)	final_target = MMCE1;
+		if (use_mmce0 != -1)	final_target = MMCE0;
 
 		if(final_target == NONE) {
 			scr_printf(C_REDB "  usable USB/MMCE device for storing dump not found.. not continuing.\n" C_WHTB);
@@ -215,9 +217,6 @@ exit_main:
 	SleepThread();
 }
 
-
-#define NEWLIB_PORT_AWARE
-#include <fileXio_rpc.h>
 void _ps2sdk_memory_init() {
 	reset_iop();
 	
