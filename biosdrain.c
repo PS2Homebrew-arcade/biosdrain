@@ -41,6 +41,7 @@ void sysman_prerequesites()
 	// does not exist on COH-H
 	// SifLoadModule("rom0:ADDDRV", 0, NULL);
 	// SifLoadModule("rom0:ADDROM2", 0, NULL);
+	// "rom0:ACDEV" is listed on iopbtconf, so if someone finds an arcade tool, rom1 will be detected instantly
 }
 
 extern char ConsoleROMVER[];
@@ -49,31 +50,24 @@ void LoadSystemInformation()
 {
 	SysmanGetHardwareInfo(&g_hardwareInfo);
 	if (g_hardwareInfo.ROMs[0].IsExists)
-		scr_printf(" - ROM0 ADDR and SIZE: %08X %08X\n", g_hardwareInfo.ROMs[0].StartAddress, g_hardwareInfo.ROMs[0].size);
+		scr_printf(" - [ROM0]: ADDR:%08X SIZE:%08X\n", g_hardwareInfo.ROMs[0].StartAddress, g_hardwareInfo.ROMs[0].size);
 	else {
-		scr_setfontcolor(0x00FFFF);
-		scr_printf(" - WTF: ROM0 not detected\n");
-		scr_setfontcolor(0xFFFFFF);
+		scr_printf(C_YELB " - WTF: ROM0 not detected\n" C_WHTB);
 	}
 
 	if (g_hardwareInfo.DVD_ROM.IsExists)
-		scr_printf(" - DVD ADDR and SIZE: %08X %08X\n", g_hardwareInfo.DVD_ROM.StartAddress, g_hardwareInfo.DVD_ROM.size);
+		scr_printf(" - [DVDROM]: ADDR:%08X SIZE:%08X\n", g_hardwareInfo.DVD_ROM.StartAddress, g_hardwareInfo.DVD_ROM.size);
 
 	if (g_hardwareInfo.ROMs[1].IsExists)
 	{
 		if (ConsoleROMVER[5] == 'Z') {
-			scr_setfontcolor(0x00FFFF);
-			scr_printf("  UNICORN!!! DEVELOPER FLASH DETECTED!!!\n");
+			scr_printf(C_YELB "UNICORN!!! DEVELOPER FLASH DETECTED!!!\n" C_WHTB);
 			scr_printf("  PLEASE CONTACT El_isra at github.com/PS2Homebrew-arcade/biosdrain/issues/new");
-			scr_setfontcolor(0xFFFFFF);
 		}
-		scr_printf(" - ROM1 ADDR and SIZE: %08X %08X\n", g_hardwareInfo.ROMs[1].StartAddress, g_hardwareInfo.ROMs[1].size);
+		scr_printf(" - [ROM1]: ADDR:%08X SIZE:%08X\n", g_hardwareInfo.ROMs[1].StartAddress, g_hardwareInfo.ROMs[1].size);
 	}
 	if (g_hardwareInfo.ROMs[2].IsExists) {
-		if (ConsoleROMVER[5] == 'Z')
-			scr_setfontcolor(0x00FFFF);
-		scr_printf(" - ROM2 ADDR and SIZE: %08X %08X\n", g_hardwareInfo.ROMs[2].StartAddress, g_hardwareInfo.ROMs[2].size);
-		scr_setfontcolor(0xFFFFFF);
+		scr_printf(C_YELB " - [ROM2]: ADDR:%08X SIZE:%08X\n" C_WHTB, g_hardwareInfo.ROMs[2].StartAddress, g_hardwareInfo.ROMs[2].size);
 	}
 
 	scr_printf(" - BoardInf: %02X\n",g_hardwareInfo.BoardInf);
@@ -112,7 +106,7 @@ int wait_dev_ready(const char* dev)
     struct stat buffer;
     int ret = -1;
     int retries = 50;
-
+	printf("wait for device '%s'... ", dev);
     while(ret != 0 && retries > 0)
     {
         ret = stat(dev, &buffer);
@@ -121,6 +115,8 @@ int wait_dev_ready(const char* dev)
 
         retries--;
     }
+	if (retries) printf("found after %d retries", (50-retries));
+	printf("\n");
 	return(retries != 0);
 }
 
@@ -137,13 +133,17 @@ void reset_iop()
 	sbv_patch_enable_lmb();
 }
 enum TARGETS {NONE=0, USB=1, MMCE0=2, MMCE1=3};
-u32 final_target = 0;
+u32 final_target = NONE;
 u32 use_usb_dir = 0;
 u32 use_mmce0 = 0;
 u32 use_mmce1 = 0;
-int determine_device()
-{
+int determine_device() {
 	load_irx_usb();
+		scr_printf("  WAITING FOR DEVICE");
+	for (int i = 0; i < 5; i++)
+		scr_printf(".");
+	scr_printf("\n");
+	
 #ifndef FORCE_USB
 	// Check host first, can't open just host: on pcsx2, it's broken.
 	if (!mkdir("host:tmp", 0777))
@@ -157,18 +157,20 @@ int determine_device()
 #endif
 	{
 
-		use_usb_dir = !wait_dev_ready("usb:/");
 		use_mmce0   = !wait_dev_ready("mmce0:/");
 		use_mmce1   = !wait_dev_ready("mmce1:/");
+		use_usb_dir = !wait_dev_ready("usb:/");
+		if (!(use_usb_dir || use_mmce1 || use_mmce0)) {
+			use_mmce0   = !wait_dev_ready("mmce0:/");
+			use_mmce1   = !wait_dev_ready("mmce1:/");
+			use_usb_dir = !wait_dev_ready("usb:/");
+		}
 		if (use_usb_dir) final_target = USB;
-		if (use_mmce1) final_target = MMCE1;
-		if (use_mmce0) final_target = MMCE0;
+		if (use_mmce1)   final_target = MMCE1;
+		if (use_mmce0)   final_target = MMCE0;
 
-		if(final_target == NONE)
-		{
-			scr_setfontcolor(0x00FFFF);
-			scr_printf("  usable USB/MMCE device for storing dump not found.. not continuing.\n");
-			scr_setfontcolor(0xFFFFFF);
+		if(final_target == NONE) {
+			scr_printf(C_REDB "  usable USB/MMCE device for storing dump not found.. not continuing.\n" C_WHTB);
 			return 1;
 		}
 	}
@@ -192,7 +194,7 @@ int main(void)
 
 	init_scr();
 
-	scr_printf("\n\n\n  biosdrain for SYSTEM2x6 - Modified By El_isra - revision %s\n", GIT_VERSION);
+	scr_printf("\n\n\n  biosdrain for Arcade PS2 - Modified By El_isra - revision %s\n", GIT_VERSION);
 	if (determine_device())
 		goto exit_main;
 

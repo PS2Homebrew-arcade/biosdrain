@@ -87,7 +87,10 @@ int modelname_read(char *name)
 				return -2;
 			if ((stat & 0x40) || name[0] == '\0')
 				strcpy(name, "Unknown");
-			if (ConsoleROMVER[5] == 'Z' && (name[0]&0xFF) == 0xFF && (name[1]&0xFF) == 0xFF) {
+			if ((ConsoleROMVER[5] == 'Z') && // is arcade
+					(((name[0]&0xFF) == 0xFF && (name[1]&0xFF) == 0xFF) || // empty NVM
+					(!strncmp(name, "UNDEFINED", 9))) // sometimes empty NVM returns "UNDEFINED\xFF\xFF\xFF\xFF\xFF\xFF"
+				) {
 				strcpy(name, "SYSTEM256");// arcade machine with modename memset to 0xFF? this is a system256
 			}
 			return 0; // Original returned -1

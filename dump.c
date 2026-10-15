@@ -28,17 +28,18 @@ static t_dump dump_jobs[7];
 static char dump_filename[MODEL_NAME_MAX_LEN];
 
 static u32 dump_target = 0;
-extern int errno;
-static u32 dump_file(t_dump job)
-{
+
+#include <errno.h>
+#include <string.h>
+
+static u32 dump_file(t_dump job) { // 0:OK, 1: fail open, 2:fail wrt
 	char path[256];
 	char* targets[4] = {"host:", "usb:", "mmce0:", "mmce1:"}; 
 	sprintf(path, "%s%s.%s", targets[dump_target], dump_filename, job.dump_fext);
 
 	FILE *f = fopen(path, "wb");
-	if (!f)
-	{
-		scr_printf("Failed to open file %s error %d\n", path, errno);
+	if (!f) {
+		scr_printf("Failed to open file '%s'\n\t err -%d (%s)\n", path, errno, strerror(errno));
 		return 1;
 	}
 
@@ -46,8 +47,7 @@ static u32 dump_file(t_dump job)
 	while(written_size > 0)
 	{
 		u32 write_size = fwrite(dump_shared_buffer, 1, written_size, f);
-		if (write_size == 0)
-		{
+		if (write_size == 0) {
 			scr_printf("Failed to write to file %s\n", path);
 			fclose(f);
 			return 2;
@@ -120,39 +120,31 @@ void dump_init(u32 use_usb)
 		scr_printf("Warning: Unable to get the model name\nFile name will be set to 'Unknown'");
 }
 
-void dump_exec()
-{
-	for (u32 i = 0; i < 6; i++)
-	{
-		if (dump_jobs[i].enabled)
-		{
+void dump_exec() {
+	for (u32 i = 0; i < 6; i++) {
+		if (dump_jobs[i].enabled) {
 			scr_printf("  Dumping %s... \r", dump_jobs[i].dump_name);
 			u32 ret = dump_jobs[i].dump_func();
-			if (!ret)
-			{
+			if (!ret) {
 				FlushCache(0);
 				scr_printf("  %-6s Writing to file...\r", dump_jobs[i].dump_name);
-				dump_file(dump_jobs[i]);
+				ret = dump_file(dump_jobs[i]);
 				scr_printf("  %-6s [", dump_jobs[i].dump_name);
-				scr_setfontcolor(0x00FF00);
-				scr_printf("OK");
-				scr_setfontcolor(0xFFFFFF);
+				if (ret == 0)
+					scr_printf(C_GRNB "OK" C_WHTB);
+				else
+					scr_printf(C_REDB "FAIL" C_WHTB);
 				scr_printf("]                   \n");
-			}
-			else
-			{
+			} else {
 				scr_printf("  %-6s [", dump_jobs[i].dump_name);
-				scr_setfontcolor(0x0000FF);
-				scr_printf("FAIL");
-				scr_setfontcolor(0xFFFFFF);
+				scr_printf(C_REDB "FAIL" C_WHTB);
 				scr_printf("] (ret:%02d)          \n", ret);
 			}
 		}
 	}
 }
 
-void dump_cleanup()
-{
+void dump_cleanup() {
 	free(dump_shared_buffer);
 }
 
